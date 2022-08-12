@@ -13,11 +13,12 @@ import geopy.distance
 import json
 from geographiclib.geodesic import Geodesic
 counter = 0
-
+locationlat = Value('d',0.0)
+locationlon = Value('d',0.0)
 with open('Line.json') as f:
    GeoList = [tuple(x) for x in json.load(f)]
-locationlat, locationlon  = GeoList[counter]
-
+locationlat.value, locationlon.value  = GeoList[counter]
+print(GeoList)
 arduino = serial.Serial(
     port = '/dev/ttyACM0',
     baudrate = 2000000, #perhaps make this lower need to do research
@@ -66,7 +67,7 @@ def Search():
 
 b = 3
 
-final = (locationlat, locationlon)
+
 
 
 #input("press any key and enter to continue")
@@ -82,7 +83,7 @@ def begintrack():
         try:
             with open('/home/gilblankenship/Projects/PythonCode/env/main/driveto/location.json') as json_file:
                 locationdict = json.load(json_file)
-            
+            json_file.close()
             x = locationdict['latitude']
             xx.value = float(x)
             #print(x)
@@ -133,8 +134,10 @@ distance = Value('d',0.0)
 def howfar():
     while True:
         global distance
+        final = (locationlat.value, locationlon.value)
         current = (xx.value, yy.value)
         distance.value = geopy.distance.distance(current,final).m
+        #print(distance.value)
         #print("distance=",distance.value)
 
 far = mp.Process(target = howfar)
@@ -151,41 +154,51 @@ far.start()
 time.sleep(5)
 print("measuring distance")
 
+while True:
+    while distance.value > 1:
+        #print(distance.value)
+        X = xx.value
+        Y = yy.value
+        bearing = Geodesic.WGS84.Inverse(X, Y, locationlat.value, locationlon.value)['azi1']
+        #print(bearing)
+        if bearing <0:
+            bearing = bearing + 360
+        if bearing >360:
+            bearing = bearing - 360
+        #print("bearing=",bearing)
+        #print("yaw=",yaw.value)
+        bearinglow = bearing - 20
+        if bearinglow < 0:
+            bearinglow = bearinglow + 360
+        bearinghigh = bearing + 20
+        if bearinghigh > 360:
+            bearinghigh = bearinghigh - 360
+        if yaw.value > bearinglow and yaw.value < bearinghigh and b != 0:
+            Forward()
+        if yaw.value < bearinglow  and b != 2:
+            Right()
+        if yaw.value > bearinghigh and b !=1:
+            Left()
+        # time.sleep(1)
+        
 
-while distance.value > 1:
-    X = xx.value
-    Y = yy.value
-    bearing = Geodesic.WGS84.Inverse(X, Y, locationlat, locationlon)['azi1']
-    #print(bearing)
-    if bearing <0:
-        bearing = bearing +360
-    #print("bearing=",bearing)
-    #print("yaw=",yaw.value)
-    bearinglow = bearing - 13
-    if bearinglow < 0:
-        bearinglow = bearinglow + 360
-    bearinghigh = bearing + 13
-    if bearinghigh > 360:
-        bearinghigh = bearinghigh - 360
-    if yaw.value > bearinglow and yaw.value < bearinghigh and b != 0:
-        Forward()
-    if yaw.value < bearinglow  and b != 2:
-        Right()
-    if yaw.value > bearinghigh and b !=1:
-        Left()
-    # time.sleep(1)
-    
 
 
+    while distance.value < 1:
+        try:
+            Stop()
+            print(counter, "point reached")
+            counter = counter +1
+            locationlat.value, locationlon.value  = GeoList[counter]
+            
+            time.sleep(2)
+            break
+            
+        except IndexError:
+            print('IndexError')
 
-if distance.value < 1:
-    try:
-        counter = counter +1
-        locationlat, locationlon  = GeoList[counter]
-    except IndexError:
-
-        Stop()
-        time.sleep(1)
-        far.terminate()
-        dir.terminate()
-        track.terminate()
+            Stop()
+            time.sleep(1)
+            far.terminate()
+            dir.terminate()
+            track.terminate()

@@ -68,7 +68,7 @@ def track(stop):
         
             with open('/home/gilblankenship/Projects/PythonCode/env/main/driveto/location.json') as json_file:
                 locationdict = json.load(json_file)
-            
+            json_file.close()
             x = locationdict['latitude']
             #print(x)
             y = locationdict['longetude']
@@ -80,7 +80,7 @@ def track(stop):
             print(err)
             print("in json")
             #this breaks out of the function
-        time.sleep(8)
+        time.sleep(3)
         
 #starting the thread for creating the fence
 stop_threads = False
@@ -119,5 +119,9 @@ while True:
         stop_threads = True
         with open('Line.json', 'w') as f:
             json.dump(GeoList,f)
+            f.close()
         break
+        
+
+
 #starting the second thread

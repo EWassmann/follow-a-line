@@ -3,7 +3,7 @@
 # This is heavily based on the NtripPerlClient program written by BKG.
 # Then heavily based on a unavco original.
 # Change Log
-#     example:python NtripClientaughust4thJSON.py -u evanbandit@gmail.com -p none -m 100000 -r 100 -v -k /dev/ttyACM1 -2 3.23.52.207 2101 CavCastNet_ABLTER
+#     example:python NtripClientaughust4thJSON.py -u evanbandit@gmail.com -p none -m 100000 -r 100 -v -k /dev/ttyACM1 -2 3.23.52.207 2101 ohlss-57
 #     support functions:   
 #         1.get source table;
 #         2.upload gga period(default:3 sec);
@@ -57,6 +57,8 @@ def run():
             foruse ={"latitude": geo.lat, "longetude": geo.lon}
             with open('location.json','w') as outfile:
                 json.dump(foruse, outfile)
+                #print("updated pos")
+            outfile.close()
             #print("Heading of Motion: ", geo.headMot)
         except (ValueError, IOError) as err:
             print(err)
@@ -194,7 +196,10 @@ class NtripClient(object):
                     while not found_header:
                         casterResponse = self.socket.recv(4096)     # All the data
 #                        print('recv:', casterResponse.decode(encoding='utf-8'))    # print recv data(for debug)
-                        header_lines = casterResponse.decode(encoding='utf-8').split('\r\n')
+                        try:
+                            header_lines = casterResponse.decode(encoding='utf-8').split('\r\n')
+                        except UnicodeDecodeError as err:
+                            print(err)
 
                         for line in header_lines:
                             if line == "":
