@@ -100,7 +100,7 @@ while True:
 
 
     directions = input()
-    #stuff below is from keyboard controll it is looking for the inputs to run themovement functions from the top
+    #stuff below is from keyboard controll it is looking for the inputs to run the movement functions from the top
 
 
     if directions == "w":

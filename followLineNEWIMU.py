@@ -12,6 +12,8 @@ import geopy.distance
 
 import json
 from geographiclib.geodesic import Geodesic
+m = 1 #get set to zero to kill whole program
+b = 3 #counter 
 counter = 0
 locationlat = Value('d',0.0)
 locationlon = Value('d',0.0)
@@ -65,12 +67,12 @@ def Search():
     global b
     b = 5
 
-b = 3
 
 
 
 
-#input("press any key and enter to continue")
+
+
 xx = Value('d',0.0)
 yy = Value('d',0.0)
 def begintrack():
@@ -94,10 +96,10 @@ def begintrack():
             
             # current = (xx, yy)
             # distance = geopy.distance.distance(current,final).m
-            time.sleep(.5)
+            
         except json.decoder.JSONDecodeError as err:
-            print(err)
-            time.sleep(1)
+            #print(err)
+            time.sleep(.01)
 
          
             
@@ -126,7 +128,7 @@ def direction():
         if yaw.value < 0:
             yaw.value = yaw.value + 360
         #print("yaw =",yaw.value)
-        time.sleep(0.1)
+        #time.sleep(0.1)
 
 dir = mp.Process(target = direction)
 
@@ -143,7 +145,7 @@ def howfar():
 far = mp.Process(target = howfar)
 track.start()
 print("tracking")
-time.sleep(5)
+time.sleep(3)
 dir.start()
 input("please move robot around in all directions, press enter when done")
 #time.sleep(5)
@@ -173,18 +175,35 @@ while True:
         bearinghigh = bearing + 20
         if bearinghigh > 360:
             bearinghigh = bearinghigh - 360
-        if yaw.value > bearinglow and yaw.value < bearinghigh and b != 0:
-            Forward()
-        if yaw.value < bearinglow  and b != 2:
-            Right()
-        if yaw.value > bearinghigh and b !=1:
-            Left()
-        # time.sleep(1)
+        
+        if bearinglow < bearinghigh:
+            if yaw.value >= bearinglow and yaw.value <= bearinghigh and b != 0:
+                Forward()
+            elif yaw.value < bearinglow  and b != 2:
+                Right()
+            elif yaw.value > bearinghigh and b !=1:
+                
+                Left()
+                # time.sleep(1)
+            else:
+                pass
+        elif bearinglow > bearinghigh:
+            if yaw.value >= bearinghigh and yaw.value <= bearinglow and b != 0:
+                Forward()
+            elif yaw.value < bearinghigh  and b != 2:
+                Right()
+            elif yaw.value > bearinglow and b !=1:
+                Left()
+            else:
+                pass
+        time.sleep(.1)
+        
+
         
 
 
 
-    while distance.value < 1:
+    while distance.value <= 1:
         try:
             Stop()
             print(counter, "point reached")
@@ -192,13 +211,18 @@ while True:
             locationlat.value, locationlon.value  = GeoList[counter]
             
             time.sleep(2)
-            break
+            break #may be unnecessary
             
         except IndexError:
-            print('IndexError')
+            m = 0
+            print('Final point reached')
 
             Stop()
             time.sleep(1)
             far.terminate()
             dir.terminate()
             track.terminate()
+            distance.value = 0
+    if m == 0:
+        break
+        

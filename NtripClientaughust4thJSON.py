@@ -3,7 +3,7 @@
 # This is heavily based on the NtripPerlClient program written by BKG.
 # Then heavily based on a unavco original.
 # Change Log
-#     example:python NtripClientaughust4thJSON.py -u evanbandit@gmail.com -p none -m 100000 -r 100 -v -k /dev/ttyACM1 -2 3.23.52.207 2101 ohlss-57
+#     example:python NtripClientaughust4thJSON.py -u evanbandit@gmail.com -p none -m 100000 -r 100 -v -k /dev/ttyACM1 -2 3.23.52.207 2101 SandySpringMD
 #     support functions:   
 #         1.get source table;
 #         2.upload gga period(default:3 sec);
