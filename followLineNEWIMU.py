@@ -157,7 +157,7 @@ time.sleep(5)
 print("measuring distance")
 
 while True:
-    while distance.value > 1:
+    while distance.value > .75:
         #print(distance.value)
         X = xx.value
         Y = yy.value
@@ -169,10 +169,10 @@ while True:
             bearing = bearing - 360
         #print("bearing=",bearing)
         #print("yaw=",yaw.value)
-        bearinglow = bearing - 20
+        bearinglow = bearing - 15
         if bearinglow < 0:
             bearinglow = bearinglow + 360
-        bearinghigh = bearing + 20
+        bearinghigh = bearing + 15
         if bearinghigh > 360:
             bearinghigh = bearinghigh - 360
         
@@ -203,10 +203,12 @@ while True:
 
 
 
-    while distance.value <= 1:
+    while distance.value <= .75:
         try:
             Stop()
-            print(counter, "point reached")
+            # print(counter, "point reached")
+            time.sleep(1)
+            print("i am",distance.value, "m away from point",counter)
             counter = counter +1
             locationlat.value, locationlon.value  = GeoList[counter]
             
