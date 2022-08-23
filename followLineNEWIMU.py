@@ -13,14 +13,17 @@ import geopy.distance
 import json
 from geographiclib.geodesic import Geodesic
 m = 1 #get set to zero to kill whole program
-b = 3 #counter 
-counter = 0
+b = 3 #counter for the last direction that the robot turned, ensures that it does not double send arguments to the arduino
+
+counter = 0 #counter is for reading and iterating through the lat lon points
 locationlat = Value('d',0.0)
 locationlon = Value('d',0.0)
+#this reads the json file into a touple list in this file
 with open('Line.json') as f:
    GeoList = [tuple(x) for x in json.load(f)]
 locationlat.value, locationlon.value  = GeoList[counter]
-print(GeoList)
+#print(GeoList)
+
 arduino = serial.Serial(
     port = '/dev/ttyACM0',
     baudrate = 2000000, #perhaps make this lower need to do research
@@ -73,6 +76,7 @@ def Search():
 
 
 
+
 xx = Value('d',0.0)
 yy = Value('d',0.0)
 def begintrack():
@@ -113,7 +117,7 @@ sensor.mode = adafruit_bno055.NDOF_MODE
 last_val = 0xFFFF
 
 
-
+#below reads the bearing values from the imu
 yaw = Value('d',0.0)
 currTime = time.time()
 print_count = 0
@@ -132,6 +136,7 @@ def direction():
 
 dir = mp.Process(target = direction)
 
+#below calulates the distance to the desired point
 distance = Value('d',0.0)
 def howfar():
     while True:
@@ -141,6 +146,8 @@ def howfar():
         distance.value = geopy.distance.distance(current,final).m
         #print(distance.value)
         #print("distance=",distance.value)
+
+#below starts the three diffrent processes, it also gives you time to calibrate the imu and prints the calibration status
 
 far = mp.Process(target = howfar)
 track.start()
@@ -156,6 +163,7 @@ far.start()
 time.sleep(5)
 print("measuring distance")
 
+#this part handles directing the robot in which way it should turn
 while True:
     while distance.value > .75:
         #print(distance.value)
@@ -200,7 +208,7 @@ while True:
         
 
         
-
+#here iterates through the list of lat lon points and kills the processes when it is done
 
 
     while distance.value <= .75:
