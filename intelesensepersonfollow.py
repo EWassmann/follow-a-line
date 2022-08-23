@@ -48,7 +48,7 @@ if device_product_line == 'L500':
 else:
     config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
 
-# construct the argument parse and parse the arguments
+# construct the argument parse and parse the arguments (modified with defaults so the script does not need to be ran in command line)
 ap = argparse.ArgumentParser()
 ap.add_argument("-p", "--prototxt", default ="/home/gilblankenship/Projects/PythonCode/env/main/driveto/follow a line/MobileNetSSD_deploy.prototxt.txt",
     help="path to Caffe 'deploy' prototxt file")
@@ -58,7 +58,7 @@ ap.add_argument("-c", "--confidence", type=float, default=0.7,
     help="minimum probability to filter weak detections")
 args = vars(ap.parse_args())
 
-b = 7
+b = 7 #keeps track of last direction information given so that the arduino is not written more than one of the same instructions
 arduino = serial.Serial(
 port = '/dev/ttyACM0',
 baudrate = 2000000, #perhaps make this lower need to do research
@@ -71,7 +71,8 @@ rtscts = False,
 dsrdtr = False,
 writeTimeout = 2
 )
-#----------------Functions---------------------------
+
+#----------------Functions---------------
 def Left():
     arduino.write("1".encode()) 
     global b
@@ -111,11 +112,11 @@ def track(stop):
             with open('/home/gilblankenship/Projects/PythonCode/env/main/driveto/location.json') as json_file:
                 locationdict = json.load(json_file)
             json_file.close()
-            x = locationdict['latitude']
+            xpos = locationdict['latitude']
             #print(x)
-            y = locationdict['longetude']
+            ypos = locationdict['longetude']
 
-            GeoList.insert(counter, (x,y))
+            GeoList.insert(counter, (xpos,ypos))
             
             counter = counter + 1
         except json.decoder.JSONDecodeError as err:
@@ -128,7 +129,7 @@ def track(stop):
 stop_threads = False
 t1 = threading.Thread(target = track, args = (lambda: stop_threads, ))
 
-
+#initalizing the center of the detection so no errors are thrown and it does not cause robot to turn one way or another
 xx = 700
 yy = 500
 
@@ -155,6 +156,7 @@ print("[INFO] starting video stream...")
 # fps = FPS().start()
 distave = 0
 start_time = time.time()
+start_time2 = time.time()
 # loop over the frames from the video stream
 t1.start()
 pipeline.start(config)
@@ -176,12 +178,14 @@ while True:
     depth_image = np.asanyarray(depth_frame.get_data())
     blob = cv2.dnn.blobFromImage(cv2.resize(color_image, (300, 300)),
         0.007843, (300, 300), 127.5)
+   
+    
 
     # pass the blob through the network and obtain the detections and
     # predictions
     net.setInput(blob)
     detections = net.forward()
-    
+    olddist = distave
 
 # loop over the detections
     for i in np.arange(0, detections.shape[2]):
@@ -201,10 +205,10 @@ while True:
 
             box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
             (startX, startY, endX, endY) = box.astype("int")
-            distave = 0
+            
             if idx == 15:
                 radius = endX - startX
-                
+            
                 xx = int(startX + (endX-startX)*(1/2))
                 yy = int(startY +(endY - startY)*(1/2))
                 disttot = 0
@@ -212,6 +216,7 @@ while True:
                     for g in range (yy-5, yy+5):
                         disttot = disttot + depth_frame.get_distance(a,g)
                 distave = disttot/100
+            
                 
 
                 
@@ -224,43 +229,51 @@ while True:
             y = startY - 15 if startY - 15 > 15 else startY + 15
             cv2.putText(color_image, label, (startX, y),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, COLORS[idx], 2)
-
+    #below, if it has been over 4 seconds since it noticed a person it will set distave to zero, if it has been less than four seconds it will
+    #keep doing whatever it was doing before
+    if distave != olddist:
+        start_time2 = time.time()
+    if distave == olddist:
+        if time.time() - start_time2 > 4:
+            distave = 0
             
 
 
 
     
         
-    if distave >1:
+    if distave >1.5:
         
-        if xx > 430:
+        if xx > 420:
             if b!= 2:
                 Right()
                 b = 2
-                print(2)
+                #print(2)
                 #time.sleep(1.3)
-        if xx <210:
+        if xx <200:
             if b != 1:
                 Left()
                 b = 1
-                print(1)
+                #print(1)
                 #time.sleep(1.3)
-        if xx > 210 and xx < 430:
+        if xx > 200 and xx < 420:
             if b != 0: 
                 Forward()
                 b = 0
-                print(0)
-                #time.sleep(1.3)     
-    elif distave<1:
+                #print(0)
+                    
+    elif distave < 1.5:
         if b != 4:
             Stop()
             b = 4
-            print(4)
+            #print(4)
+            #print(distave)
     else:
         if b!=4:
             Stop()
             b = 4
-            print(4)
+            #print(4)
+            #print(distave)
 
 
 
